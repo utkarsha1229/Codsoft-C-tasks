@@ -1,0 +1,151 @@
+TASK 5:- Build a tool that allows users to perform various image processing operations like resizing, cropping, and filtering.Load Image: Allow users to load an image. Display Image: Display the loaded image in the application. Image Filters: Implement basic image filters like grayscale, blur, and sharpen. Color Adjustment: Allow users to adjust image colors, brightness, and contrast. Crop and Resize: Provide options to crop and resize the image. Image Saving: Enable users to save the processed image. User Interface: Design a user-friendly interface for easy interaction
+
+
+#include <opencv2/opencv.hpp>
+#include <iostream>
+
+using namespace cv;
+using namespace std;
+
+class ImageProcessor {
+private:
+    Mat image;
+
+public:
+    // Constructor to load the image
+    ImageProcessor(const string& imagePath) {
+        image = imread(imagePath); // Load the image
+        if (image.empty()) {
+            cerr << "Could not open or find the image." << endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // Display the image
+    void displayImage(const string& windowName) const {
+        namedWindow(windowName, WINDOW_AUTOSIZE);
+        imshow(windowName, image);
+        waitKey(0);
+    }
+
+    // Apply Grayscale filter
+    void applyGrayscale() {
+        cvtColor(image, image, COLOR_BGR2GRAY);
+        cout << "Applied Grayscale filter.\n";
+    }
+
+    // Apply Blur filter
+    void applyBlur(int kernelSize) {
+        if (kernelSize % 2 == 0) kernelSize++; // Ensure odd kernel size
+        blur(image, image, Size(kernelSize, kernelSize));
+        cout << "Applied Blur with kernel size: " << kernelSize << endl;
+    }
+
+    // Adjust Brightness and Contrast
+    void adjustBrightnessContrast(double alpha, int beta) {
+        for (int y = 0; y < image.rows; y++) {
+            for (int x = 0; x < image.cols; x++) {
+                for (int c = 0; c < image.channels(); c++) {
+                    image.at<Vec3b>(y, x)[c] = 
+                        saturate_cast<uchar>(alpha * image.at<Vec3b>(y, x)[c] + beta);
+                }
+            }
+        }
+        cout << "Adjusted Brightness and Contrast.\n";
+    }
+
+    // Resize the image
+    void resizeImage(int width, int height) {
+        resize(image, image, Size(width, height));
+        cout << "Resized Image to " << width << "x" << height << endl;
+    }
+
+    // Crop the image
+    void cropImage(Rect region) {
+        image = image(region);
+        cout << "Cropped Image to selected region.\n";
+    }
+
+    // Save the processed image
+    void saveImage(const string& outputPath) const {
+        imwrite(outputPath, image);
+        cout << "Image saved as '" << outputPath << "'.\n";
+    }
+};
+
+int main() {
+    string imagePath;
+    cout << "Enter the path of the image: ";
+    cin >> imagePath;
+
+    ImageProcessor imgProc(imagePath);
+    
+    // Display the original image
+    imgProc.displayImage("Original Image");
+
+    int choice;
+    do {
+        // Display the menu
+        cout << "\nImage Processing Menu:\n";
+        cout << "1. Grayscale Filter\n";
+        cout << "2. Blur Image\n";
+        cout << "3. Adjust Brightness and Contrast\n";
+        cout << "4. Resize Image\n";
+        cout << "5. Crop Image\n";
+        cout << "6. Save and Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1:
+            imgProc.applyGrayscale();
+            break;
+        case 2: {
+            int kernelSize;
+            cout << "Enter blur kernel size (odd number): ";
+            cin >> kernelSize;
+            imgProc.applyBlur(kernelSize);
+            break;
+        }
+        case 3: {
+            double alpha;
+            int beta;
+            cout << "Enter alpha (contrast) [1.0-3.0]: ";
+            cin >> alpha;
+            cout << "Enter beta (brightness) [-100 to 100]: ";
+            cin >> beta;
+            imgProc.adjustBrightnessContrast(alpha, beta);
+            break;
+        }
+        case 4: {
+            int width, height;
+            cout << "Enter new width: ";
+            cin >> width;
+            cout << "Enter new height: ";
+            cin >> height;
+            imgProc.resizeImage(width, height);
+            break;
+        }
+        case 5: {
+            int x, y, w, h;
+            cout << "Enter top-left corner (x, y): ";
+            cin >> x >> y;
+            cout << "Enter width and height: ";
+            cin >> w >> h;
+            imgProc.cropImage(Rect(x, y, w, h));
+            break;
+        }
+        case 6:
+            imgProc.saveImage("processed_image.jpg");
+            cout << "Exiting...\n";
+            break;
+        default:
+            cout << "Invalid choice. Try again.\n";
+        }
+
+        imgProc.displayImage("Processed Image");
+    } while (choice != 6);
+
+    return 0;
+}
+
